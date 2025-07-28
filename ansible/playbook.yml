@@ -30,7 +30,7 @@
     - name: Create users with plain text passwords
       user:
         name: "{{ item.username }}"
-        password: "{{ item.password | password_hash('sha512') }}" # Hashing password for security
+        password: "{{ item.password }}" # Hashing password for security
         shell: /bin/bash
         state: present
         create_home: yes
@@ -43,26 +43,7 @@
         append: yes
       loop: "{{ users }}"
 
-    - name: Send email with credentials
-      mail:
-        subject: "Your Account on {{ inventory_hostname }}"
-        to: "{{ item.email }}"
-        body: |
-          Hello {{ item.username }},
-
-          Your account has been created on {{ inventory_hostname }}.
-          Username: {{ item.username }}
-          Password: {{ item.password }}
-
-          Thanks,
-          Admin
-        from: "shoeb.corporate@gmail.com"
-        host: smtp.gmail.com
-        port: 587
-        username: "{{ lookup('env', 'SMTP_USER') }}"
-        password: "{{ lookup('env', 'SMTP_PASS') }}"
-        secure: starttls
-      loop: "{{ users }}"
+    
 
     # --- New Tasks Start Here ---
 
