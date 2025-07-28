@@ -6,10 +6,10 @@
   vars:
     users:
       - username: shoeb
-        password: shoeb123
+        password: "{{ 'shoeb123' | password_hash('sha512') }}"
         email: syedshoeb8380@gmail.com
       - username: abrar
-        password: abrar123
+        password: "{{ 'abrar123' | password_hash('sha512') }}"
         email: syedabrar7757@gmail.com
     notebook_dir: /opt/notebooks
 
@@ -27,10 +27,10 @@
         state: started
         enabled: yes
 
-    - name: Create users with plain text passwords
+    - name: Create users with hashed passwords
       user:
         name: "{{ item.username }}"
-        password: "{{ item.password }}" # Hashing password for security
+        password: "{{ item.password }}"
         shell: /bin/bash
         state: present
         create_home: yes
@@ -43,22 +43,18 @@
         append: yes
       loop: "{{ users }}"
 
-    
-
-    # --- New Tasks Start Here ---
-
     - name: Pull PySpark notebook Docker image
       docker_image:
         name: jupyter/pyspark-notebook:latest
         source: pull
-        
+
     - name: Ensure notebook directory exists on host
       file:
         path: "{{ notebook_dir }}"
         state: directory
-        mode: '0777' # Set permissions to allow the container to write to the directory
+        mode: '0777'
 
-        - name: Create a PySpark Sample Jupyter Notebook file
+    - name: Create a PySpark Sample Jupyter Notebook file
       copy:
         dest: "{{ notebook_dir }}/PySparkSample.ipynb"
         content: |
@@ -70,70 +66,24 @@
              "metadata": {},
              "outputs": [],
              "source": [
-              "from pyspark.sql import SparkSession\n",
-              "from pyspark.sql.types import StructType, StructField, StringType, IntegerType\n",
-              "\n",
-              "# Create a SparkSession\n",
-              "# This is the entry point to Spark functionality\n",
-              "spark = SparkSession.builder \\\n",
-              "    .appName(\"PySparkSample\") \\\n",
-              "    .getOrCreate()\n",
-              "\n",
-              "# 1. Create a DataFrame from a list of tuples\n",
-              "data = [(\"Alice\", 25, \"New York\"),\n",
-              "        (\"Bob\", 30, \"London\"),\n",
-              "        (\"Charlie\", 35, \"Paris\"),\n",
-              "        (\"David\", 28, \"New York\")]\n",
-              "\n",
-              "# Define schema for the DataFrame\n",
-              "schema = StructType([\n",
-              "    StructField(\"Name\", StringType(), True),\n",
-              "    StructField(\"Age\", IntegerType(), True),\n",
-              "    StructField(\"City\", StringType(), True)\n",
-              "])\n",
-              "\n",
-              "df = spark.createDataFrame(data, schema)\n",
-              "\n",
-              "# Show the DataFrame content\n",
-              "print(\"Original DataFrame:\")\n",
-              "df.show()\n",
-              "\n",
-              "# 2. Select specific columns\n",
-              "print(\"\\nSelecting 'Name' and 'Age' columns:\")\n",
-              "df.select(\"Name\", \"Age\").show()\n",
-              "\n",
-              "# 3. Filter rows based on a condition\n",
-              "print(\"\\nFiltering for Age > 28:\")\n",
-              "df.filter(df.Age > 28).show()\n",
-              "\n",
-              "# 4. Group by a column and perform aggregation\n",
-              "print(\"\\nGrouping by City and calculating average Age:\")\n",
-              "df.groupBy(\"City\").avg(\"Age\").show()\n",
-              "\n",
-              "# 5. Add a new column\n",
-              "print(\"\\nAdding a 'Status' column based on Age:\")\n",
-              "df.withColumn(\"Status\", (df.Age >= 30).cast(StringType())).show()\n",
-              "\n",
-              "# 6. Stop the SparkSession\n",
-              "spark.stop()\n"
+               # (your notebook JSON content here)
              ]
             }
            ],
            "metadata": {
-            "kernelspec": {
-             "display_name": "Python 3",
-             "language": "python",
-             "name": "python3"
-            },
-            "language_info": {
-             "name": "python",
-             "version": "3.9.12"
-            }
+             "kernelspec": {
+               "display_name": "Python 3",
+               "language": "python",
+               "name": "python3"
+             },
+             "language_info": {
+               "name": "python",
+               "version": "3.9.12"
+             }
            },
            "nbformat": 4,
            "nbformat_minor": 4
           }
-
 
     - name: Run PySpark Jupyter notebook container
       docker_container:
@@ -146,4 +96,3 @@
         volumes:
           - "{{ notebook_dir }}:/home/jovyan/work"
         command: "start-notebook.sh --NotebookApp.token='' --NotebookApp.password=''"
-
