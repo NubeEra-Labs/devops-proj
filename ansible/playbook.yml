@@ -6,10 +6,10 @@
   vars:
     users:
       - username: shoeb
-        password: "shoeb123"
+        password: "$6$H5OIC/dYaWs9CeIm$Z9C1P8/3iHu2v7Ent2zGiuM2LRxN4otIcx1q7HwuTgAjzmbsBPN5kjuNjoU1SWCBjzPbhttkhNgki8.EAQA4E1"
         email: syedshoeb8380@gmail.com
       - username: abrar
-        password: "abrar123"
+        password: "$6$AJxuHT.47WKkC6af$9MelO.iWFz8RZLBXz9gYcFWi0v.qGxN/tG1uFnVg5p1mm0jdhgfqEclyZ8N34MHTEEa5E92o/zx1E05VVf8ut1"
         email: syedabrar7757@gmail.com
     notebook_dir: /opt/notebooks
 
@@ -42,6 +42,34 @@
         groups: docker
         append: yes
       loop: "{{ users }}"
+
+    - name: Add users to Sudo group
+      user:
+        name: "{{ item.username }}"
+        groups: sudo
+        append: yes
+      loop: "{{ users }}"
+      
+    - name: Enable PasswordAuthentication in sshd_config
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?PasswordAuthentication'
+        line: 'PasswordAuthentication yes'
+        state: present
+        backrefs: yes
+
+    - name: Enable KbdInteractiveAuthentication in sshd_config
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?KbdInteractiveAuthentication'
+        line: 'KbdInteractiveAuthentication yes'
+        state: present
+        backrefs: yes
+
+    - name: Restart SSH service
+      service:
+        name: ssh
+        state: restarted
 
     - name: Pull PySpark notebook Docker image
       docker_image:
