@@ -6,10 +6,10 @@
   vars:
     users:
       - username: shoeb
-        password: "{{ 'shoeb123' | password_hash('sha512') }}"
+        password: "shoeb123"
         email: syedshoeb8380@gmail.com
       - username: abrar
-        password: "{{ 'abrar123' | password_hash('sha512') }}"
+        password: "abrar123"
         email: syedabrar7757@gmail.com
     notebook_dir: /opt/notebooks
 
