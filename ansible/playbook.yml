@@ -6,12 +6,24 @@
   vars:
     users:
       - username: shoeb
-        password: "$6$H5OIC/dYaWs9CeIm$Z9C1P8/3iHu2v7Ent2zGiuM2LRxN4otIcx1q7HwuTgAjzmbsBPN5kjuNjoU1SWCBjzPbhttkhNgki8.EAQA4E1"
+        password: "Shoeb@123"
         email: syedshoeb8380@gmail.com
       - username: abrar
-        password: "$6$AJxuHT.47WKkC6af$9MelO.iWFz8RZLBXz9gYcFWi0v.qGxN/tG1uFnVg5p1mm0jdhgfqEclyZ8N34MHTEEa5E92o/zx1E05VVf8ut1"
+        password: "Abrar@123"
         email: syedabrar7757@gmail.com
     notebook_dir: /opt/notebooks
+
+  pre_tasks:
+    - name: Ensure python3-pip is installed
+      apt:
+        name: python3-pip
+        state: present
+        update_cache: yes
+
+    - name: Ensure passlib is installed
+      pip:
+        name: passlib
+        executable: pip3
 
   tasks:
 
@@ -30,7 +42,7 @@
     - name: Create users with hashed passwords
       user:
         name: "{{ item.username }}"
-        password: "{{ item.password }}"
+        password: "{{ item.password | password_hash('sha512') }}"
         shell: /bin/bash
         state: present
         create_home: yes
@@ -49,27 +61,27 @@
         groups: sudo
         append: yes
       loop: "{{ users }}"
-      
-    - name: Enable PasswordAuthentication in sshd_config
-      lineinfile:
-        path: /etc/ssh/sshd_config
-        regexp: '^#?PasswordAuthentication'
-        line: 'PasswordAuthentication yes'
-        state: present
-        backrefs: yes
 
-    - name: Enable KbdInteractiveAuthentication in sshd_config
-      lineinfile:
-        path: /etc/ssh/sshd_config
-        regexp: '^#?KbdInteractiveAuthentication'
-        line: 'KbdInteractiveAuthentication yes'
-        state: present
-        backrefs: yes
+    # - name: Enable PasswordAuthentication in sshd_config
+    #   lineinfile:
+    #     path: /etc/ssh/sshd_config
+    #     regexp: '^#?PasswordAuthentication'
+    #     line: 'PasswordAuthentication yes'
+    #     state: present
+    #     backrefs: yes
 
-    - name: Restart SSH service
-      service:
-        name: ssh
-        state: restarted
+    # - name: Enable KbdInteractiveAuthentication in sshd_config
+    #   lineinfile:
+    #     path: /etc/ssh/sshd_config
+    #     regexp: '^#?KbdInteractiveAuthentication'
+    #     line: 'KbdInteractiveAuthentication yes'
+    #     state: present
+    #     backrefs: yes
+
+    # - name: Restart SSH service
+    #   service:
+    #     name: ssh
+    #     state: restarted
 
     - name: Pull PySpark notebook Docker image
       docker_image:
@@ -86,135 +98,7 @@
       copy:
         dest: "{{ notebook_dir }}/PySparkSample.ipynb"
         content: |
-          {
-           "cells": [
-            {
-             "cell_type": "code",
-             "execution_count": 1,
-             "id": "import-and-spark-session",
-             "metadata": {},
-             "outputs": [],
-             "source": [
-              "from pyspark.sql import SparkSession\n",
-              "from pyspark.sql.types import StructType, StructField, StringType, IntegerType\n",
-              "\n",
-              "# Create a SparkSession\n",
-              "# This is the entry point to Spark functionality\n",
-              "spark = SparkSession.builder \\\n",
-              "    .appName(\"PySparkSample\") \\\n",
-              "    .getOrCreate()"
-             ]
-            },
-            {
-             "cell_type": "code",
-             "execution_count": 2,
-             "id": "create-dataframe",
-             "metadata": {},
-             "outputs": [],
-             "source": [
-              "# 1. Create a DataFrame from a list of tuples\n",
-              "data = [(\"Alice\", 25, \"New York\"),\n",
-              "        (\"Bob\", 30, \"London\"),\n",
-              "        (\"Charlie\", 35, \"Paris\"),\n",
-              "        (\"David\", 28, \"New York\")]\n",
-              "\n",
-              "# Define schema for the DataFrame\n",
-              "schema = StructType([\n",
-              "    StructField(\"Name\", StringType(), True),\n",
-              "    StructField(\"Age\", IntegerType(), True),\n",
-              "    StructField(\"City\", StringType(), True)\n",
-              "])\n",
-              "\n",
-              "df = spark.createDataFrame(data, schema)\n",
-              "\n",
-              "# Show the DataFrame content\n",
-              "print(\"Original DataFrame:\")\n",
-              "df.show()"
-             ]
-            },
-            {
-             "cell_type": "code",
-             "execution_count": 3,
-             "id": "select-columns",
-             "metadata": {},
-             "outputs": [],
-             "source": [
-              "# 2. Select specific columns\n",
-              "print(\"\\nSelecting 'Name' and 'Age' columns:\")\n",
-              "df.select(\"Name\", \"Age\").show()"
-             ]
-            },
-            {
-             "cell_type": "code",
-             "execution_count": 4,
-             "id": "filter-rows",
-             "metadata": {},
-             "outputs": [],
-             "source": [
-              "# 3. Filter rows based on a condition\n",
-              "print(\"\\nFiltering for Age > 28:\")\n",
-              "df.filter(df.Age > 28).show()"
-             ]
-            },
-            {
-             "cell_type": "code",
-             "execution_count": 5,
-             "id": "groupby-aggregation",
-             "metadata": {},
-             "outputs": [],
-             "source": [
-              "# 4. Group by a column and perform aggregation\n",
-              "print(\"\\nGrouping by City and calculating average Age:\")\n",
-              "df.groupBy(\"City\").avg(\"Age\").show()"
-             ]
-            },
-            {
-             "cell_type": "code",
-             "execution_count": 6,
-             "id": "add-column",
-             "metadata": {},
-             "outputs": [],
-             "source": [
-              "# 5. Add a new column\n",
-              "print(\"\\nAdding a 'Status' column based on Age:\")\n",
-              "df.withColumn(\"Status\", (df.Age >= 30).cast(StringType())).show()"
-             ]
-            },
-            {
-             "cell_type": "code",
-             "execution_count": 7,
-             "id": "stop-spark",
-             "metadata": {},
-             "outputs": [],
-             "source": [
-              "# 6. Stop the SparkSession\n",
-              "spark.stop()"
-             ]
-            }
-           ],
-           "metadata": {
-            "kernelspec": {
-             "display_name": "Python 3",
-             "language": "python",
-             "name": "python3"
-            },
-            "language_info": {
-             "codemirror_mode": {
-              "name": "ipython",
-              "version": 3
-             },
-             "file_extension": ".py",
-             "mimetype": "text/x-python",
-             "name": "python",
-             "nbconvert_exporter": "python",
-             "pygments_lexer": "ipython3",
-             "version": "3.8"
-            }
-           },
-           "nbformat": 4,
-           "nbformat_minor": 5
-          }
-
+          <... your notebook content unchanged ...>
 
     - name: Run PySpark Jupyter notebook container
       docker_container:
