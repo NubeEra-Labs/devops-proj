@@ -78,6 +78,7 @@ jobs:
 
       - name: Run Ansible Playbook
         run: |
-          sudo apt update && sudo apt install -y ansible
+          sudo apt update && sudo apt install -y ansible python3-pip
+          pip3 install ansible passlib
           ansible-playbook -i inventory.ini playbook.yml
         working-directory: ./ansible
