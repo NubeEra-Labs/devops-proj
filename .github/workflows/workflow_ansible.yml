@@ -41,16 +41,11 @@ jobs:
         echo "[servers]" > ./ansible/inventory.ini
         echo "${{ env.INSTANCE_IP }} ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/id_rsa" >> ./ansible/inventory.ini
 
-    - name: Install Ansible and passlib
+    - name: Install Ansible and passlib (clean pip setup)
       run: |
         sudo apt update
-        sudo apt install -y ansible python3-pip
-        pip3 install passlib
-
-    - name: Run Ansible Playbook
-      run: |
-        ansible-playbook -i inventory.ini playbook.yml
-      working-directory: ./ansible
+        sudo apt install -y python3-pip
+        pip3 install ansible passlib
 
     - name: Run Ansible Playbook
       run: |
